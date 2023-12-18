@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  apis:
+    image: node:20
+    container_name: crawl-linkedin-apis
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /apis
+    volumes:
+      - ./apis:/apis
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  db:
+    image: postgres:latest
+    container_name: crawl-linkedin-db
+    environment:
+      POSTGRES_DB: crawl-linkedin-db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./apis/postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
