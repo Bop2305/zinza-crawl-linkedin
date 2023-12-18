@@ -5,7 +5,7 @@ import { EnumOrderBy } from 'src/enums/order-by.enum';
 export class PaginationParams {
     @IsEnum(EnumOrderBy)
     @IsOptional()
-    order?: EnumOrderBy = EnumOrderBy.ASC
+    orderBy?: EnumOrderBy = EnumOrderBy.ASC
 
     @Type(() => Number)
     @IsOptional()

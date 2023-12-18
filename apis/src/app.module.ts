@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JobModule } from './job/job.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PuppeteerModule } from './puppeteer/puppeteer.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         autoLoadEntities: true
       })
     }),
-    JobModule
+    JobModule,
+    PuppeteerModule
   ],
   controllers: [AppController],
   providers: [AppService],
