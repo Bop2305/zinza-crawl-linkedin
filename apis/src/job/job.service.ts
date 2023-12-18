@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { JobDetail } from './job.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationParams } from 'src/common/dto/pagination.dto';
-import { ConditionDto } from './dto/condition.dto';
+import { JobQueryDto } from './dto/job-query.dto';
+import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { getTotalPage } from 'src/utils/get-total-page.util';
 
 @Injectable()
 export class JobService {
@@ -12,73 +14,73 @@ export class JobService {
         private jobDetailRepository: Repository<JobDetail>
     ) { }
 
-    async getAllJobs(pagination: PaginationParams): Promise<JobDetail[]> {
+    async getAllJobs(pagination: PaginationParams): Promise<PaginationResponseDto<JobDetail>> {
         const {
             orderBy,
             page,
-            perpage
+            perPage
         } = pagination
 
-        const offset = (page - 1) * perpage
+        const offset = (page - 1) * perPage
 
-        const jobs = await this.jobDetailRepository.find({
+        const [data, count] = await this.jobDetailRepository.findAndCount({
             skip: offset,
-            take: perpage,
+            take: perPage,
             order: {
                 created_at: orderBy
             }
         })
 
-        return jobs
+        const totalPage = getTotalPage(count, perPage)
+
+        return {
+            data,
+            totalPage,
+            perPage,
+            currentPage: page,
+            orderBy
+        }
     }
 
-
-    async getJobsByConditions(condition: ConditionDto, pagination: PaginationParams): Promise<JobDetail[]> {
+    async getJobs(query: JobQueryDto, pagination: PaginationParams) {
         const {
             orderBy,
             page,
-            perpage
+            perPage
         } = pagination
 
-        const offset = (page - 1) * perpage
+        const offset = (page - 1) * perPage
 
         const {
             experienceLevel,
-            jobType
-        } = condition
+            jobType,
+            keywords
+        } = query
 
-        const jobs = await this.jobDetailRepository.find({
+        const [data, count] = await this.jobDetailRepository.findAndCount({
             where: {
                 experience_level: experienceLevel,
-                job_type: jobType
+                job_type: jobType,
+                required_skills: Like('%' + keywords + '%')
             },
             skip: offset,
-            take: perpage,
+            take: perPage,
             order: {
                 created_at: orderBy
             }
         })
 
-        return jobs
-    }
+        console.log('data', data);
+        
 
-    async searchJobs(search: string, pagination: PaginationParams): Promise<JobDetail[]> {
-        const {
-            orderBy,
-            page,
-            perpage
-        } = pagination
+        const totalPage = getTotalPage(count, perPage)
 
-        const offset = (page - 1) * perpage
-
-        const jobs = await this.jobDetailRepository
-        .createQueryBuilder('job_detail')
-        .where('required_skills ILIKE :search', {search: `%${search}%`})
-        .skip(offset)
-        .take(perpage)
-        .orderBy('job_detail.created_at', orderBy)
-        .getMany()
-
-        return jobs
+        return {
+            data,
+            totalPage,
+            perPage,
+            currentPage: page,
+            orderBy
+        }
     }
 }

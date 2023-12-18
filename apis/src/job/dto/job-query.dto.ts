@@ -1,8 +1,8 @@
-import { IsEnum, IsOptional } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 import { EnumExperienceLevel } from "src/enums/experience-level.enum";
 import { EnumJobType } from "src/enums/job-type.enum";
 
-export class ConditionDto {
+export class JobQueryDto {
     @IsEnum(EnumExperienceLevel)
     @IsOptional()
     experienceLevel?: EnumExperienceLevel.ENTRY_LEVEL
@@ -10,4 +10,8 @@ export class ConditionDto {
     @IsEnum(EnumJobType)
     @IsOptional()
     jobType?: EnumJobType.HYBRID
+
+    @IsString()
+    @IsOptional()
+    keywords?: string
 }

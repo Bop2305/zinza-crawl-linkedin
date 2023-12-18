@@ -16,5 +16,5 @@ export class PaginationParams {
     @IsOptional()
     @Min(1)
     @Max(50)
-    perpage?: number = 20
+    perPage?: number = 20
 }

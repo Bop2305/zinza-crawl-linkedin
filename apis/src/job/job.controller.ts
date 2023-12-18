@@ -1,8 +1,9 @@
-import { Controller, Get, Injectable, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { JobService } from './job.service';
 import { Response } from 'express';
 import { PaginationParams } from 'src/common/dto/pagination.dto';
-import { OKSuccessResponse } from 'src/core/success.response';
+import { PaginationResponse } from 'src/core/success.response';
+import { JobQueryDto } from './dto/job-query.dto';
 
 @Controller('job')
 export class JobController {
@@ -12,13 +13,28 @@ export class JobController {
 
     @Get()
     async getAllJobs(
-        @Query() { orderBy, page, perpage }: PaginationParams,
+        @Query() { orderBy, page, perPage }: PaginationParams,
         @Res() res: Response
     ): Promise<Response> {
-        const pagination = { orderBy, page, perpage }
+        const pagination = { orderBy, page, perPage }
 
-        const jobs = await this.jobService.getAllJobs(pagination)
+        const metadata = await this.jobService.getAllJobs(pagination)
 
-        return new OKSuccessResponse({ metadata: { jobs, pagination } }).send(res)
+        return new PaginationResponse(metadata).send(res)
+    }
+
+    @Get('/search')
+    async getJobsByCondition(
+        @Query() { keywords, experienceLevel, jobType }: JobQueryDto,
+        @Query() { orderBy, page, perPage }: PaginationParams,
+        @Res() res: Response
+    ): Promise<Response> {
+        const query = { keywords, experienceLevel, jobType }
+
+        const pagination = { orderBy, page, perPage }
+
+        const metadata = await this.jobService.getJobs(query, pagination)
+
+        return new PaginationResponse(metadata).send(res)
     }
 }
