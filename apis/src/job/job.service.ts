@@ -6,6 +6,7 @@ import { PaginationParams } from 'src/common/dto/pagination.dto';
 import { JobQueryDto } from './dto/job-query.dto';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 import { getTotalPage } from 'src/utils/get-total-page.util';
+import { CreateJobDto } from './dto/create-job.dto';
 
 @Injectable()
 export class JobService {
@@ -70,9 +71,6 @@ export class JobService {
             }
         })
 
-        console.log('data', data);
-        
-
         const totalPage = getTotalPage(count, perPage)
 
         return {
@@ -82,5 +80,12 @@ export class JobService {
             currentPage: page,
             orderBy
         }
+    }
+
+    async createJob(createJob: CreateJobDto): Promise<JobDetail> {
+        const newJob = await this.jobDetailRepository.create(createJob)
+        const createdJob = await this.jobDetailRepository.save(newJob)
+
+        return createdJob
     }
 }

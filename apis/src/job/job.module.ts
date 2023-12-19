@@ -9,6 +9,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   providers: [JobService],
   imports: [
     TypeOrmModule.forFeature([JobDetail])
+  ],
+  exports: [
+    JobService
   ]
 })
 export class JobModule {}

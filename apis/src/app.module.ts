@@ -4,7 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JobModule } from './job/job.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PuppeteerModule } from './puppeteer/puppeteer.module';
+import { LinkedinModule } from './linkedin/linkedin.module';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { PuppeteerModule } from './puppeteer/puppeteer.module';
       })
     }),
     JobModule,
-    PuppeteerModule
+    LinkedinModule
   ],
   controllers: [AppController],
   providers: [AppService],

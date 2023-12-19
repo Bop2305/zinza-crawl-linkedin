@@ -1,15 +1,26 @@
 FROM node:20-alpine3.17
-
-WORKDIR /apis
-
-# RUN npm install -g @nestjs/cli
+FROM alpine
 
 COPY package*.json ./
 
-RUN yarn install
+RUN apk add --no-cache \
+      chromium \
+      nss \
+      freetype \
+      harfbuzz \
+      ca-certificates \
+      ttf-freefont \
+      nodejs \
+      yarn
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /apis
 
 COPY . .
 
-# RUN yarn build
+RUN yarn install
+RUN yarn add puppeteer
 
+# RUN yarn build
 CMD ["yarn", "run", "start:dev"]
