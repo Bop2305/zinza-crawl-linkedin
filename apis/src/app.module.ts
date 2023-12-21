@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { JobModule } from './job/job.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LinkedinModule } from './linkedin/linkedin.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { LinkedinModule } from './linkedin/linkedin.module';
       })
     }),
     JobModule,
-    LinkedinModule
+    LinkedinModule,
+    MailModule
   ],
   controllers: [AppController],
   providers: [AppService],
