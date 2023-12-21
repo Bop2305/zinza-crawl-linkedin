@@ -6,6 +6,7 @@ import { JobModule } from './job/job.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LinkedinModule } from './linkedin/linkedin.module';
 import { MailModule } from './mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { MailModule } from './mail/mail.module';
     }),
     JobModule,
     LinkedinModule,
-    MailModule
+    MailModule,
+    ScheduleModule.forRoot()
   ],
   controllers: [AppController],
   providers: [AppService],

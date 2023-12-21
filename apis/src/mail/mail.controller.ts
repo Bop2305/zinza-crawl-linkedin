@@ -7,8 +7,13 @@ export class MailController {
         private mailService: MailService
     ) {}
 
-    @Post('/demo')
-    async sendMail() {
-        await this.mailService.sendMail('canhthong05@gmail.com', 'Test')
+    @Post('/schedule')
+    async scheduleEmail() {
+        this.mailService.scheduleEmail('canhthong05@gmail.com', 'Test')
+    }
+
+    @Post('/cancel-schedule')
+    async cancelAllScheduledEmails() {
+        this.mailService.cancelAllScheduledEmails()
     }
 }
