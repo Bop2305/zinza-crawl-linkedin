@@ -1,0 +1,18 @@
+import { Suspense } from "react";
+import { Outlet } from "react-router-dom";
+import Header from "./Header";
+import Footer from "./Footer";
+
+export default function Layout() {
+    return (
+        <>
+            <main>
+                <Header />
+                <Suspense fallback={<div>Loading...</div>}>
+                    <Outlet></Outlet>
+                </Suspense>
+                <Footer />
+            </main>
+        </>
+    )
+}
