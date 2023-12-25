@@ -5,6 +5,8 @@ import * as puppeteer from 'puppeteer';
 import { Page } from 'puppeteer';
 import { JobService } from 'src/job/job.service';
 import { JobDetail } from 'src/job/job.entity';
+import { CandidateService } from 'src/candidate/candidate.service';
+import { CreateCandidateDto } from 'src/candidate/dto/create-candidate.dto';
 
 @Injectable()
 export class LinkedinService {
@@ -19,7 +21,8 @@ export class LinkedinService {
     linkedinPassword = process.env.LINKEDIN_PASSWORD
 
     constructor(
-        private jobService: JobService
+        private jobService: JobService,
+        private candidateService: CandidateService
     ) { }
 
     async loginLinkedin(page: Page) {
@@ -35,7 +38,7 @@ export class LinkedinService {
 
     async getJobDetail(page: Page): Promise<Partial<JobDetail>> {
         await page.waitForSelector('#job-details', {
-            timeout: 300000,
+            timeout: 180000,
         })
 
         const job = await page.evaluate(() => {
@@ -104,7 +107,7 @@ export class LinkedinService {
         })
     }
 
-    async getJobs(url) {
+    async getJobs(url: string) {
         const browser = await puppeteer.launch({
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
             args: ['--no-sandbox'],
@@ -137,9 +140,11 @@ export class LinkedinService {
                 return jobItems.map(ele => ele.id)
             })
 
-            for (const id of jobList) {  
+            const jobs = []
+
+            for (const id of jobList) {
                 await page.waitForSelector(`li#${id}`, {
-                    timeout: 300000,
+                    timeout: 180000,
                 });
 
                 await page.click(`li#${id}`)
@@ -148,17 +153,114 @@ export class LinkedinService {
                     path: `img-${id}.png`
                 })
 
-                const job = await this.getJobDetail(page)
-
                 const jobUrl = await page.url()
 
-                await this.jobService.createJob({ ...job, linkedin_url: jobUrl })
+                const job = await this.getJobDetail(page)
 
-                // const positionScroll = await getScrollBottom(page, 'jobs-search-results-list')
-                // console.log('positionScroll', positionScroll);
-                
-                // if(positionScroll >= 0 && positionScroll < 1) this.handleNextPage(page)
+                const createJob = { ...job, linkedin_url: jobUrl }
+
+                await this.jobService.createJob(createJob)
+
+                jobs.push(createJob)
             }
+
+            return jobs
+        } catch (error) {
+            throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
+        } finally {
+            await browser.close()
+        }
+    }
+
+    async getCandidateDetail(url: string) {
+        const browser = await puppeteer.launch({
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+            args: ['--no-sandbox'],
+        });
+
+        try {
+            const page = await browser.newPage()
+
+            await page.setViewport({
+                width: 1920,
+                height: 1080
+            })
+
+            await autoScroll(page)
+
+            await this.loginLinkedin(page)
+
+            await page.goto(url)
+
+            await page.waitForSelector('body')
+
+            await page.screenshot({
+                path: `img.png`
+            })
+
+            const [
+                fullname,
+                intro,
+                countries,
+                contact,
+            ] = await Promise.all([
+                page.$eval('h1.text-heading-xlarge.inline.t-24.v-align-middle.break-words', ele => ele.innerText),
+                page.$eval('div.text-body-medium.break-words', ele => ele.innerText),
+                page.$eval('span.text-body-small.inline.t-black--light.break-words', ele => ele.innerText),
+                page.$eval('a#top-card-text-details-contact-info', ele => ele.href),
+            ])
+
+            await page.waitForSelector('.artdeco-list__item')
+
+            const experiences = await page.evaluate(() => {
+                const section = document.querySelector('main.scaffold-layout__main section:nth-child(5)')
+                const dataList = Array.from(section.querySelectorAll('.artdeco-list__item')).map(item => {
+                    const getValue = (selector) => (item.querySelector(selector)?.textContent.trim() || null);
+
+                    const role = getValue('.t-bold > span');
+                    const companyName = getValue('.t-14.t-normal > span');
+                    const duration = getValue('.t-14.t-normal.t-black--light > span');
+                    const location = getValue('.t-14.t-normal.t-black--light:nth-child(4) > span');
+
+                    return { role, companyName, duration, location };
+                });
+
+                return dataList;
+            });
+
+            const education = await page.evaluate(() => {
+                const section = document.querySelector('main.scaffold-layout__main section:nth-child(6)')
+                const dataList = Array.from(section.querySelectorAll('.artdeco-list__item')).map(item => {
+                    const getValue = (selector) => (item.querySelector(selector)?.textContent.trim() || null);
+
+                    const universityName = getValue('.t-bold > span');
+                    const majors = getValue('.t-14.t-normal > span');
+                    const duration = getValue('.t-14.t-normal.t-black--light > span');
+
+                    return { universityName, duration, majors };
+                });
+
+                return dataList;
+            });
+
+            const profile = {
+                fullname,
+                intro,
+                countries,
+                contact,
+            } as CreateCandidateDto
+
+            const createdCandidate = await this.candidateService.createCandidate(profile)
+
+            const createdExperiences = []
+            for (const item of experiences) {
+                const newExperience = { ...item, company_name: item.companyName, candidate: createdCandidate.id }
+                const createdExperience = await this.candidateService.createExperience(newExperience)
+                createdExperiences.push(createdExperience)
+            }
+
+            return { ...createdCandidate, experiences: createdExperiences }
+
         } catch (error) {
             throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR)
         } finally {

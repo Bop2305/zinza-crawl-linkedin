@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpCode, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { MailerService, ISendMailOptions } from '@nestjs-modules/mailer';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from '@nestjs/schedule/node_modules/cron';
@@ -16,6 +16,7 @@ export class MailService {
             this.mailerService.sendMail(option)
         } catch (error) {
             console.error(`Error sending email to ${option.to}`)
+            throw new HttpException(`Error sending email to ${option.to}`, HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
