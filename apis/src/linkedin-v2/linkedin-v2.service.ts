@@ -4,6 +4,7 @@ import { statusLog } from 'src/utils/status-log.util';
 import treeKill from 'tree-kill';
 import blockedHosts from './blocked-hosts';
 import { getHostname } from 'src/utils/linkedin.util';
+import { autoScroll } from 'src/utils/auto-scroll.ulti';
 
 export interface Location {
   city: string | null;
@@ -108,6 +109,14 @@ interface ScraperOptions {
   executablePath: string
 }
 
+interface SearchCandidate {
+  fullName: string | null
+  position: string | null
+  location: string | null
+  skills: string | null
+  profileUrl: string | null
+}
+
 @Injectable()
 export class LinkedinV2Service {
   /**
@@ -207,10 +216,14 @@ export class LinkedinV2Service {
 
     const isLoggedIn = !url.endsWith('/login')
 
-    await page.close();
+    // await page.close();
 
     if (isLoggedIn) {
       statusLog(logSection, 'All good. We are still logged in.')
+      await this.searchCandidate(
+        page,
+        'https://www.linkedin.com/search/results/people/?keywords=react&origin=SWITCH_SEARCH_VERTICAL&sid=Hy%3A'
+      )
     } else {
       const errorMessage = 'Bad news, we are not logged in! Your session seems to be expired. Use your browser to login again with your LinkedIn credentials and extract the "li_at" cookie value for the "sessionCookieValue" option.';
       statusLog(logSection, errorMessage)
@@ -224,6 +237,8 @@ export class LinkedinV2Service {
       throw new Error('Browser not set.')
     }
 
+    console.log('break 0')
+
     const blockedResources = ['image', 'media', 'font', 'texttrack', 'object', 'beacon', 'csp_report', 'imageset']
 
     try {
@@ -232,12 +247,20 @@ export class LinkedinV2Service {
       const firstPage = (await this.browser.pages())[0];
       await firstPage.close()
 
-      const session = await page.target().createCDPSession()
+      console.log('break 1')
+
+      const target = await page.target()
+
+      console.log('target', target)
+
+      const session = await target.createCDPSession()
       await page.setBypassCSP(true)
       await session.send('Page.enable')
       await session.send('Page.setWebLifecycleState', {
         state: 'active',
       })
+
+      console.log('break 2')
 
       statusLog(logSection, `Blocking the following resources: ${blockedResources.join(', ')}`)
 
@@ -333,5 +356,71 @@ export class LinkedinV2Service {
       page.click(this.selector.CTA_SELECTOR),
       page.waitForNavigation()
     ])
+  }
+
+  public async searchCandidate(page: Page, url: string): Promise<SearchCandidate[]> {
+    const logSection = 'search candidate'
+
+    if (!this.browser) {
+      throw new Error('Browser not set.')
+    }
+
+    if (!url) {
+      throw new Error('No search url given.')
+    }
+
+    if (!url.includes('linkedin.com/')) {
+      throw new Error('The given URL to scrape is not a linkedin.com url.')
+    }
+
+    try {
+      // const page = await this.createPage()
+
+      statusLog(logSection, `Navigating to LinkedIn profile: ${url}`)
+
+      await page.goto(url, {
+        // waitUntil: 'networkidle2',
+        // timeout: this.options.timeout
+      });
+
+      await page.waitForSelector('.search-results__cluster-title-bar', { timeout: this.options.timeout })
+
+      statusLog(logSection, 'LinkedIn search page loaded!')
+
+      statusLog(logSection, 'Getting all the LinkedIn profile data by scrolling the page to the bottom, so all the data gets loaded into the page...')
+
+      await autoScroll(page);
+
+      statusLog(logSection, 'Parsing data...')
+
+      const candidates = await page.$$eval('ul.reusable-search__entity-result-list > li', (elements: Element[]) => {
+        return elements.map(element => {
+          const fullNameAnchor = element.querySelector('.entity-result__title-text > a') as HTMLAnchorElement
+          const position = element.querySelector('.entity-result__primary-subtitle')
+          const location = element.querySelector('.entity-result__secondary-subtitle')
+          const skill = element.querySelector('.entity-result__divider > p.entity-result__summary')
+
+          return {
+            fullName: fullNameAnchor ? fullNameAnchor.textContent?.trim() : null,
+            position: position ? position.textContent?.trim() : null,
+            location: location ? location.textContent?.trim() : null,
+            skills: skill ? skill.textContent?.trim() : null,
+            profileUrl: fullNameAnchor && fullNameAnchor.href && !fullNameAnchor.href.startsWith('https://www.linkedin.com/search/results/people/')
+            ? fullNameAnchor.href
+            : null
+          } as SearchCandidate
+        })
+      }) as SearchCandidate[]
+
+      console.log('candidates', candidates)
+
+      statusLog(logSection, 'Parsed data...')
+
+      page.close()
+
+      return candidates
+    } catch (error) {
+      throw error
+    }
   }
 }

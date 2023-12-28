@@ -8,6 +8,7 @@ import { LinkedinModule } from './linkedin/linkedin.module';
 import { MailModule } from './mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CandidateModule } from './candidate/candidate.module';
+import { LinkedinV2Module } from './linkedin-v2/linkedin-v2.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { CandidateModule } from './candidate/candidate.module';
     LinkedinModule,
     MailModule,
     ScheduleModule.forRoot(),
-    CandidateModule
+    CandidateModule,
+    LinkedinV2Module
   ],
   controllers: [AppController],
   providers: [AppService],

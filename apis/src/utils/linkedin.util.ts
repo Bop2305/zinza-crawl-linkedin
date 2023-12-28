@@ -1,8 +1,8 @@
 import moment from 'moment-timezone'
-import { Location } from '../linkedin/linkedin.service';
 import { Page } from 'puppeteer';
 import countries from 'i18n-iso-countries';
 import cities from 'all-the-cities';
+import { Location } from 'src/linkedin-v2/linkedin-v2.service';
 
 export const getIsCountry = (text: string): boolean => {
   const countriesList = Object.values(countries.getNames('en'));

@@ -44,6 +44,7 @@
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
     "string-width": "^7.0.0",
+    "tree-kill": "^1.2.2",
     "typeorm": "^0.3.17"
   },
   "devDependencies": {

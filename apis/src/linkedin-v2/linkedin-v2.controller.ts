@@ -12,8 +12,11 @@ export class LinkedinV2Controller {
     @Get('/search/candidate')
     async searchCandidate(@Res() res: Response): Promise<Response> {
         this.linkedinV2Service.options.sessionCookieValue = process.env.LINKEDIN_SESSION_COOKIE_VALUE
+        this.linkedinV2Service.options.keepAlive = true
         
         await this.linkedinV2Service.setup()
+
+        //await this.linkedinV2Service.searchCandidate('https://www.linkedin.com/search/results/people/?keywords=react&origin=SWITCH_SEARCH_VERTICAL&sid=Hy%3A')
 
         return new OKSuccessResponse({}).send(res)
     }
